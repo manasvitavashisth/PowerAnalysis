@@ -1,9 +1,33 @@
-# Power Analysis
+# Tumor-Informed ctDNA Variant Validation 🧬
 
-To validate tumor-informed variants in cfDNA, how do we establish a minimum sequencing depth (read coverage) required to achieve the statistical power necessary to distinguish a true negative from an under-sampled site?
+This repository contains a workflow to validate tumor-informed variants in cell-free DNA (cfDNA). It applies a binomial power analysis to distinguish true biological negatives from under-sampled sites.
+
+
+## 📊 Statistical Power Analysis
+
+To establish the minimum sequencing depth required to achieve sufficient statistical power, we model the probability of observing alternate reads using a Binomial Distribution.
+
+### Probability of Detection
+The probability ($prob$) of observing $x$ or more alternate reads in cfDNA at a tumor mutant locus is:
+
 $$
-p = \text{Expected probability} = VAF_{\text{tumor}} \times \frac{\text{ctDNA Purity}}{\text{Tumor Purity}}
+prob = 1 - pbinom(x - 1, N, p)
 $$
+
+Where:
+* **pbinom**: Cumulative binomial probability distribution function.
+* **N**: Read Depth of cfDNA at the mutant locus.
+* **p**: Expected probability of observing the mutant allele.
+
+### Expected Probability ($p$)
+The expected probability of observing a mutant allele is calculated as:
+
+$$
+p = VAF_{\text{tumor}} \times \frac{\text{ctDNA Purity}}{\text{Tumor Purity}}
+$$
+
+## Workflow 
+I use mutect force calling to get the cfDNA allele counts at each tumor informed loci.
 
 ## License
 
