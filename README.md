@@ -23,7 +23,7 @@ Where:
 The expected probability of observing a mutant allele is calculated as:
 
 $$
-p = VAF_{\text{tumor}} \times \frac{\text{ctDNA Purity}}{\text{Tumor Purity}}
+p = VAF_{\text{tumor}} \times \frac{\text{cfDNA Purity}}{\text{Tumor Purity}}
 $$
 
 ## Workflow 
