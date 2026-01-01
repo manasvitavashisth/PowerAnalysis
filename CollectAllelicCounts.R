@@ -1,14 +1,22 @@
-#Write a BED file with union of all the SNVs in a patient
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+# --- 1. Generate BED files for GATK ---
+# Write a BED file with union of all the SNVs in a patient
 for(i in 1:length(patient))
 {
   snv_bed=tumor[tumor$patient==patient[i],]
   snv_bed=snv_bed[!duplicated(snv_bed$varID),]
   snv_bed=snv_bed[,c('Chr', 'Start', 'End')]
+  # Convert to 0-based indexing for BED format
   snv_bed$Start=snv_bed$Start-1
   write.table(snv_bed,file=paste0('Path to File') ,row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
 }
 
-#Write a .sh file quering gatk CollectAllelicCounts for all the patient SNV in the ctDNA file
+# --- 2. GATK Command Generation ---
+# Write a .sh file quering gatk CollectAllelicCounts for all the patient SNV in the ctDNA file
 ctDNA_tf=as.data.frame(fread('Path to BAM files for all samples',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
 a=paste0('gatk CollectAllelicCounts -I ctDNA_BAM_file -R hg38_reference -L Bed_file_with_private_SNVs_from_the_patient -O Output_file_path')
 file_conn <- file('gatk.sh', open = "w")
@@ -49,7 +57,3 @@ readFileIgnoreAtRows <- function(filePath) {
   return(dataFrame)
 }
 
-#Example Plotting functions, please feel free to build your own depending on your data framework
-
-unfiltered <- readFileIgnoreAtRows("ctDNAFile")
-private=as.data.frame(fread('Private Mutations File',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
