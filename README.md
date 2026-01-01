@@ -1,4 +1,4 @@
-# Tumor-Informed ctDNA Variant Validation 🧬
+# Tumor-Informed cfDNA Variant Validation 🧬
 
 This repository contains a workflow to validate tumor-informed variants in cell-free DNA (cfDNA). It applies a binomial power analysis to distinguish true biological negatives from under-sampled sites.
 
@@ -27,7 +27,7 @@ p = VAF_{\text{tumor}} \times \frac{\text{cfDNA Purity}}{\text{Tumor Purity}}
 $$
 
 ## Workflow 
-I use mutect force calling to get the cfDNA allele counts at each tumor informed loci.
+Use Mutect force calling to get the cfDNA allele counts at each tumor informed loci. Alternately, GATK Collect Allelic Counts can also be used, though it applies fewer filters on reads mutect force calling and hence can have different read depth count. We suggest using Mutect force calling if you use Mutect2 for mutation calling in tumors to keep consistent workflows.
 
 ## License
 
