@@ -1,3 +1,6 @@
+
+unfiltered <- readFileIgnoreAtRows("ctDNAFile")
+private=as.data.frame(fread('Private Mutations File',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
 track=as.data.frame(matrix(data=NA,nrow=length(sample),ncol=1))
 colnames(track)='Sample'
 track$Sample=sample
