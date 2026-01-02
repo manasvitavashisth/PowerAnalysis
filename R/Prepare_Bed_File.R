@@ -1,49 +1,68 @@
-tumor=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/SNVs/MasterSNVFile_tumor.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-sample_number=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/Number_of_samples.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-sample_number=sample_number[sample_number$number_of_samples>1,]
-sample=sample_number$sample
-bam=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/Pyclone_Power_Analysis/all_info.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-
-
-for(i in 1:length(sample))
+setwd("/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis")
+ctdna_tf=read_excel('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/TumorFraction.xlsx')
+ctDNA=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/SNVs/MasterSNVFile_ctDNA.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
+ctdna_tf=ctdna_tf[ctdna_tf$Tumor_Fraction>=0.2,]
+patient=str_extract(ctdna_tf$Sample, "[^_]+")
+tumor=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/SNVs/MasterSNVFile_tumor_wo_perSample_PowerAnalysis.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
+patient=unique(ctDNA$patient)
+sample=unique(ctDNA$sample_name)
+patient=patient[-c(7,8)]
+sample=sample[-c(7,8)]
+for(i in 1:length(patient))
 {
-  bed=tumor[tumor$patient==sample_number$patient[i],]
+  bed=tumor[tumor$patient==patient[i],]
   bed=bed[!duplicated(bed$varID),c('Chr','Start','sample_name','Ref','Alt')]
   bed=na.omit(bed)
   bed=bed[order(bed$Chr,bed$Start),]
-  other_sample=sample_number$sample[sample_number$patient==sample_number$patient[i] & sample_number$sample!=sample_number$sample[i]]
   colnames(bed)=c('#CHROM','POS','ID','REF','ALT')
   bed$QUAL=rep('.',nrow(bed))
   bed$FILTER=rep('.',nrow(bed))
   bed$INFO=rep('.',nrow(bed))
-  for(j in 1:length(other_sample))
-  {
-    writeLines('##fileformat=VCFv4.3\n##fileDate=20240821\n##source=Ensembl\n##reference=GRCh38',paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/',other_sample[j],'.vcf'))
-    write.table(bed,file=paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/',other_sample[j],'.vcf'),row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t",append = TRUE)
-    }
+  writeLines('##fileformat=VCFv4.3\n##fileDate=20240821\n##source=Ensembl\n##reference=GRCh38',paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample[i],'.vcf'))
+  write.table(bed,file=paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample[i],'.vcf'),row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t",append = TRUE)
+
 }
-a=paste0('bgzip /fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/',sample,'.vcf')
-write.table(a,file='/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/zip.sh',row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
 
-a=paste0('gatk IndexFeatureFile -I /fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/',sample,'.vcf')
-write.table(a,file='/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/index.sh',row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
-
-#Made a bed file with all unique SNVs in the patient
-for(i in 1:length(sample))
+for(i in 1:length(patient))
 {
-  bed=tumor[tumor$patient==sample_number$patient[i],]
-  bed=bed[!duplicated(bed$varID),c('Chr','Start')]
-  other_sample=sample_number$sample[sample_number$patient==sample_number$patient[i] & sample_number$sample!=sample_number$sample[i]]
-  colnames(bed)=c('chromosome','start')
-  bed$end=bed$start
-  bed$start=bed$start-1
-  for(j in 1:length(other_sample))
-  {
-    write.table(bed,file=paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/',other_sample[j],'.bed'),row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
-  }
+  bed=tumor[tumor$patient==patient[i],]
+  bed=bed[!duplicated(bed$varID),c('Chr','Start','sample_name','Ref','Alt')]
+  bed=na.omit(bed)
+  bed=bed[order(bed$Chr,bed$Start),]
+  colnames(bed)=c('#CHROM','POS','ID','REF','ALT')
+  bed$QUAL=rep('.',nrow(bed))
+  bed$FILTER=rep('.',nrow(bed))
+  bed$INFO=rep('.',nrow(bed))
+  writeLines('##fileformat=VCFv4.3\n##fileDate=20250510\n##source=Ensembl\n##reference=GRCh38',paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample[i],'.vcf'))
+  write.table(bed,file=paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample[i],'.vcf'),row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t",append = TRUE)
+  
 }
-bam=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/Pyclone/all_info.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-bam$titan=paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_CN-SV/optimalTITAN/',file)
-bam=bam[bam$sample_id %in% sample,]
-a=paste0('    ',sample,':\n        path: ',bam$bam,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/bed_files/',sample,'.vcf')
-writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis/config/samples.yaml',sep='\n')
+
+a=paste0('gatk IndexFeatureFile -I /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample,'.vcf')
+write.table(a,file='/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/index.sh',row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+
+bam=read_excel('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/TopOff_BAM.xlsx')
+a=paste0('    ',bam$Sample,':\n        path: ',bam$BAM,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',bam$Sample,'.vcf')
+writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
+
+a=paste0('gatk IndexFeatureFile -I /fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample,'.vcf')
+write.table(a,file='/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/index.sh',row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+
+a=paste0('    ',sample,':\n        path: /fh/working/ha_g/projects/ProstateTAN/ctDNA_BamsSL/',sample,'/',sample,'.bam \n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample,'.vcf')
+writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/config/samples.yaml',sep='\n')
+
+
+bam=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/Pyclone/all_info.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
+bam=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/Pyclone/all_info_merged.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
+
+bam=bam[bam$sample_id %in% ctdna_tf$Sample,]
+a=paste0('    ',ctdna_tf$Sample,':\n        path: ',bam$bam,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample,'.vcf')
+writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
+
+a=paste0('    ',ctdna_tf$Sample,':\n        path: ',bam$bam,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample,'.vcf')
+writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
+
+a=paste0('    ',bam$sample_id,':\n        path: ',bam$bam,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',bam$sample_id,'.vcf')
+writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
+
+
