@@ -27,7 +27,27 @@ p = VAF_{\text{tumor}} \times \frac{\text{cfDNA Purity}}{\text{Tumor Purity}}
 $$
 
 ## Workflow 
-Use Mutect force calling to get the cfDNA allele counts at each tumor informed loci. Alternately, GATK Collect Allelic Counts can also be used, though it applies fewer filters on reads mutect force calling and hence can have different read depth count. We suggest using Mutect force calling if you use Mutect2 for mutation calling in tumors to keep consistent workflows.
+Use Prepare_bed_files.R to generate bed files of mutations detected in tumor sites. For our analysis, we chose to query all tumor SNVs (single nucleotide variants), and additionally categorized them as founder, shared and private SNVs. Private SNVs are SNVs which were detected only in one metastatic site in the same patient. Shared SNVs are SNVs detected in more than one but not all metastatic sites. Founder SNVs are those detected in all metastatic sites in the patient. Note: This categorization is limited by the number of metastatic sites in the patient sequenced, for example, a shared SNV can be categorized as a private SNV if the metastatic site that shares the SNV is not sequenced.
+Use Mutect force calling to get the cfDNA allele counts at each tumor informed loci. Alternately, GATK Collect Allelic Counts can also be used, though it applies fewer filters on reads mutect force calling and hence can have different read depth count. We suggest using Mutect force calling if you use Mutect2 for mutation calling in tumors to keep consistent workflows, though the trade-off is that Mutect2 needs more compute time compared to Collect Allelic Count.
+Then run PowerAnalysis.R to identify sites in cfDNA that have enough read depth to detect alt allele in the tumor. Different hyperparameters can be used for how many alt alleles you expect to observe and with what probability as shown in the table below, we went with there should be enough read depth to observe atleast 3 or more alt alleles with a probability of 0.8.
+Number of observable mutant loci
+Number of mutant reads expected to be observed
+Probability cut-off
+1199
+3 or more
+0.8
+807
+3 or more
+0.9
+1091
+8 or more
+0.8
+598
+8 or more
+0.9
+<img width="543" height="226" alt="image" src="https://github.com/user-attachments/assets/b252b714-4fe8-4a80-a513-8f53431b14c9" />
+
+Further downstream custom analysis includes plotting differences in private vs shared vs founder SNV detection in cfDNA, plotting differences across metastatic organ sites etc.
 
 ## License
 
