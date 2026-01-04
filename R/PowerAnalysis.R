@@ -326,7 +326,7 @@ run_power_analysis <- function(mutect_force_calling_path,
     ]
      
     # Calculate proportion of SNV sites reduced due to insufficient read depth
-    track[i,2]=(nrow(pyclone)-nrow(pyclone_reduced))/nrow(pyclone)
+    track[i,'Reduction_in_SNVs']=(nrow(pyclone)-nrow(pyclone_reduced))/nrow(pyclone)
     # Identify variants that were actually detected in cfDNA
     # "Detected" = has at least 1 alternate read (alt_depth > 0)
     ctdna_detected <- pyclone_reduced[pyclone_reduced$alt_depth > 0, ]
@@ -339,7 +339,7 @@ run_power_analysis <- function(mutect_force_calling_path,
     # detect, what fraction did we actually detect in cfDNA?"
     
     # Private SNVs (found in only one metastatic site)
-    track[i, 3] <- calc_proportion(
+    track[i, 'PrivateSNVs_detected'] <- calc_proportion(
       tumor = pyclone_reduced,
       cfdna = ctdna_detected,
       cluster = s_clusters,
@@ -347,7 +347,7 @@ run_power_analysis <- function(mutect_force_calling_path,
     )
      
     # Shared SNVs (found in multiple but not all metastatic sites)
-    track[i, 4] <- calc_proportion(
+    track[i, 'SharedSNVs_detected'] <- calc_proportion(
       tumor = pyclone_reduced,
       cfdna = ctdna_detected,
       cluster = s_clusters,
@@ -355,7 +355,7 @@ run_power_analysis <- function(mutect_force_calling_path,
     )
     
     # Founder SNVs (found in all metastatic sites - likely early/trunk mutations)
-    track[i, 5] <- calc_proportion(
+    track[i, 'FounderSNVs_detected'] <- calc_proportion(
       tumor = pyclone_reduced,
       cfdna = ctdna_detected,
       cluster = s_clusters,
