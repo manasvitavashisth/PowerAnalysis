@@ -180,6 +180,7 @@ run_power_analysis <- function(mutect_force_calling_path,
   ))
   colnames(track) <- c(
     'Sample',
+    'Reduction_in_SNVs',
     'PrivateSNVs_detected',
     'SharedSNVs_detected',
     'FounderSNVs_detected'
@@ -290,10 +291,10 @@ run_power_analysis <- function(mutect_force_calling_path,
     
     # Only keep sites with sufficient read depth (>3 reads by default)
     # Sites with very low depth don't provide reliable information
-    pyclone <- pyclone[pyclone$mutect_force_call_depth > MIN_READ_DEPTH, ]
+    pyclone_reduced <- pyclone[pyclone$mutect_force_call_depth > MIN_READ_DEPTH, ]
     
     # Remove sites with missing depth information
-    pyclone <- pyclone[!is.na(pyclone$mutect_force_call_depth), ]
+    pyclone_reduced <- pyclone_reduced[!is.na(pyclone$mutect_force_call_depth), ]
     
     # Calculate Expected Allele Frequency in cfDNA ----------------------------
     
@@ -316,18 +317,19 @@ run_power_analysis <- function(mutect_force_calling_path,
     # These are sites where we have sufficient depth to reliably detect
     # the variant if it's truly present in cfDNA
     
-    pyclone <- pyclone[
+    pyclone_reduced <- pyclone_reduced[
       (1 - pbinom(
         (min_alt_reads - 1),              # x - 1 (for P(X ≥ x))
-        pyclone$mutect_force_call_depth,  # n (number of trials = read depth)
-        pyclone$vaf * fraction            # p (expected probability of alt allele)
+        pyclone_reduced$mutect_force_call_depth,  # n (number of trials = read depth)
+        pyclone_reduced$vaf * fraction            # p (expected probability of alt allele)
       )) >= prob_cutoff,                   # Only keep if power ≥ threshold
     ]
      
-     
+    # Calculate proportion of SNV sites reduced due to insufficient read depth
+    track[i,2]=(nrow(pyclone)-nrow(pyclone_reduced))/nrow(pyclone)
     # Identify variants that were actually detected in cfDNA
     # "Detected" = has at least 1 alternate read (alt_depth > 0)
-    ctdna_detected <- pyclone[pyclone$alt_depth > 0, ]
+    ctdna_detected <- pyclone_reduced[pyclone_reduced$alt_depth > 0, ]
     
      
     # Calculate Detection Rates by SNV Category -------------------------------
@@ -337,24 +339,24 @@ run_power_analysis <- function(mutect_force_calling_path,
     # detect, what fraction did we actually detect in cfDNA?"
     
     # Private SNVs (found in only one metastatic site)
-    track[i, 2] <- calc_proportion(
-      tumor = pyclone,
+    track[i, 3] <- calc_proportion(
+      tumor = pyclone_reduced,
       cfdna = ctdna_detected,
       cluster = s_clusters,
       type = 'Private'
     )
      
     # Shared SNVs (found in multiple but not all metastatic sites)
-    track[i, 3] <- calc_proportion(
-      tumor = pyclone,
+    track[i, 4] <- calc_proportion(
+      tumor = pyclone_reduced,
       cfdna = ctdna_detected,
       cluster = s_clusters,
       type = 'Shared'
     )
     
     # Founder SNVs (found in all metastatic sites - likely early/trunk mutations)
-    track[i, 4] <- calc_proportion(
-      tumor = pyclone,
+    track[i, 5] <- calc_proportion(
+      tumor = pyclone_reduced,
       cfdna = ctdna_detected,
       cluster = s_clusters,
       type = 'Founder'
