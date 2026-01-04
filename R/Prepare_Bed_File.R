@@ -27,7 +27,7 @@ VCF_HEADER <- '##fileformat=VCFv4.3\n##fileDate=20250510\n##source=Ensembl\n##re
 prepare_bed_file <- function(tumor_file_path,output_file_path,patient_file_path,validate_input = TRUE) {
   # Validate inputs -----------------------------------------------------------
   if (validate_input) {
-    validate_file_paths(tumor_file_path, patient_file_path, sample_file_path, output_file_path)
+    validate_file_paths(tumor_file_path, patient_file_path)
   }
   
   # Load input data -----------------------------------------------------------
