@@ -1,68 +1,79 @@
-setwd("/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis")
-ctdna_tf=read_excel('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/TumorFraction.xlsx')
-ctDNA=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/SNVs/MasterSNVFile_ctDNA.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-ctdna_tf=ctdna_tf[ctdna_tf$Tumor_Fraction>=0.2,]
-patient=str_extract(ctdna_tf$Sample, "[^_]+")
-tumor=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/SNVs/MasterSNVFile_tumor_wo_perSample_PowerAnalysis.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-patient=unique(ctDNA$patient)
-sample=unique(ctDNA$sample_name)
-patient=patient[-c(7,8)]
-sample=sample[-c(7,8)]
-for(i in 1:length(patient))
-{
-  bed=tumor[tumor$patient==patient[i],]
-  bed=bed[!duplicated(bed$varID),c('Chr','Start','sample_name','Ref','Alt')]
-  bed=na.omit(bed)
-  bed=bed[order(bed$Chr,bed$Start),]
-  colnames(bed)=c('#CHROM','POS','ID','REF','ALT')
-  bed$QUAL=rep('.',nrow(bed))
-  bed$FILTER=rep('.',nrow(bed))
-  bed$INFO=rep('.',nrow(bed))
-  writeLines('##fileformat=VCFv4.3\n##fileDate=20240821\n##source=Ensembl\n##reference=GRCh38',paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample[i],'.vcf'))
-  write.table(bed,file=paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample[i],'.vcf'),row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t",append = TRUE)
+#' Preparing BED files at tumor informed SNVs
+#'
+#' This module prepares BED files as input for mutect force calling or Collect Allelic Counts
+#'
+#' @author Manasvita Vashisth
+#' @organization Fred Hutchinson Cancer Center
 
-}
+# Dependencies ----------------------------------------------------------------
+library(tidyverse)
+library(data.table)
 
-for(i in 1:length(patient))
-{
-  bed=tumor[tumor$patient==patient[i],]
-  bed=bed[!duplicated(bed$varID),c('Chr','Start','sample_name','Ref','Alt')]
-  bed=na.omit(bed)
-  bed=bed[order(bed$Chr,bed$Start),]
-  colnames(bed)=c('#CHROM','POS','ID','REF','ALT')
-  bed$QUAL=rep('.',nrow(bed))
-  bed$FILTER=rep('.',nrow(bed))
-  bed$INFO=rep('.',nrow(bed))
-  writeLines('##fileformat=VCFv4.3\n##fileDate=20250510\n##source=Ensembl\n##reference=GRCh38',paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample[i],'.vcf'))
-  write.table(bed,file=paste0('/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample[i],'.vcf'),row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t",append = TRUE)
+# Constants -------------------------------------------------------------------
+
+# VCF header information
+VCF_HEADER <- '##fileformat=VCFv4.3\n##fileDate=20250510\n##source=Ensembl\n##reference=GRCh38'
+
+# Main Functions --------------------------------------------------------------
+
+#' Prepare BED file
+#'
+#' @param tumor_file_path. Path to Concatenated Tumor SNV file for all patients
+#' @param output_file_path. Path for output BED files
+#' @param patient_file_path. Path to list of patients and corresponding cfDNA samples
+#' @param validate_input Logical. Perform input validation (default: TRUE).
+#' @export
+
+prepare_bed_file <- function(tumor_file_path,output_file_path,patient_file_path,validate_input = TRUE) {
+  # Validate inputs -----------------------------------------------------------
+  if (validate_input) {
+    validate_file_paths(tumor_file_path, patient_file_path, sample_file_path, output_file_path)
+  }
   
+  # Load input data -----------------------------------------------------------
+  cat("Loading input files...\n")
+
+  # Read tumor SNV data
+  tumor=as.data.frame(fread(tumor_file_path,header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
+  # Read patient list
+  patient=as.data.frame(fread(patient_file_path,header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
+  
+  # Ensure output directory exists
+  if (!dir.exists(output_file_path)) {
+    dir.create(output_file_path, recursive = TRUE)
+    cat(sprintf("  Created output directory: %s\n", output_file_path))
+  }
+  for(i in 1:nrow(patient))
+  {
+    bed=tumor[tumor$patient==patient$Patient[i],]
+    bed=bed[!duplicated(bed$varID),c('Chr','Start','sample_name','Ref','Alt')]
+    bed=na.omit(bed)
+    bed=bed[order(bed$Chr,bed$Start),]
+    colnames(bed)=c('#CHROM','POS','ID','REF','ALT')
+    bed$QUAL=rep('.',nrow(bed))
+    bed$FILTER=rep('.',nrow(bed))
+    bed$INFO=rep('.',nrow(bed))
+    writeLines(VCF_HEADER,paste0(output_file_path,patient$sample[i],'.vcf'))
+    write.table(bed,file=paste0(output_file_path,patient$sample[i],'.vcf'),row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t",append = TRUE)
+    
+  }
+
 }
 
-a=paste0('gatk IndexFeatureFile -I /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample,'.vcf')
-write.table(a,file='/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/index.sh',row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
+# Helper Functions ------------------------------------------------------------
 
-bam=read_excel('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/TopOff_BAM.xlsx')
-a=paste0('    ',bam$Sample,':\n        path: ',bam$BAM,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',bam$Sample,'.vcf')
-writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
-
-a=paste0('gatk IndexFeatureFile -I /fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample,'.vcf')
-write.table(a,file='/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/index.sh',row.names=FALSE, col.names=FALSE, quote=FALSE, sep="\t")
-
-a=paste0('    ',sample,':\n        path: /fh/working/ha_g/projects/ProstateTAN/ctDNA_BamsSL/',sample,'/',sample,'.bam \n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/bed_files/',sample,'.vcf')
-writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_mutational/PowerAnalysis_new/config/samples.yaml',sep='\n')
-
-
-bam=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/Pyclone/all_info.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-bam=as.data.frame(fread('/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/Pyclone/all_info_merged.txt',header=TRUE,sep = "\t",stringsAsFactors = FALSE,na.strings=c(".", "NA")))
-
-bam=bam[bam$sample_id %in% ctdna_tf$Sample,]
-a=paste0('    ',ctdna_tf$Sample,':\n        path: ',bam$bam,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample,'.vcf')
-writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
-
-a=paste0('    ',ctdna_tf$Sample,':\n        path: ',bam$bam,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',ctdna_tf$Sample,'.vcf')
-writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
-
-a=paste0('    ',bam$sample_id,':\n        path: ',bam$bam,'\n        intervals_file: /fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/bed_files/',bam$sample_id,'.vcf')
-writeLines(a,'/fh/fast/ha_g/projects/ProstateTAN/analysis_ctDNA/PowerAnalysis/config/samples.yaml',sep='\n')
-
-
+#' Validate File Paths
+#'
+#' @param tumor_file_path Character. Tumor file path
+#' @param patient_file_path. Path to list of patients and corresponding cfDNA samples
+#' @keywords internal
+validate_file_paths <- function(tumor_file_path, patient_file_path) {
+  
+  # Check input files exist
+  if (!file.exists(tumor_path)) {
+    stop("Tumor file not found: ", tumor_file_path)
+  }
+  if (!file.exists(patient_path)) {
+    stop("Patient file not found: ", patient_file_path)
+  }
+}
