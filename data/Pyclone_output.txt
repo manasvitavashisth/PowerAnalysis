@@ -1,0 +1,5 @@
+mutation_id	sample_id	cluster_id	cellular_prevalence	cellular_prevalence_std	cluster_assignment_prob
+chr10_100356066_T_C	02-010_LIVER	0	0.6565	0.0009	0.8686
+chr10_100356066_T_C	03-440_LUNG	2	0	0	0.8686
+chr10_101864076_A_C	40-055_LIVER	3	0.6565	0.0009	0.5954
+chr10_101864076_A_C	11-220_LUNG	4	0	0	0.5954
