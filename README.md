@@ -61,20 +61,22 @@ devtools::install_github("manasvitavashisth/PowerAnalysis")
 ```r
 library(PowerAnalysis)
 
-# Load your data
-tumor_data <- read_tumor_data("path/to/tumor_vcf.vcf")
-cfdna_data <- read_cfdna_data("path/to/cfdna_counts.txt")
-
-# Run power analysis
-results <- run_power_analysis(
-  tumor_data = tumor_data,
-  cfdna_data = cfdna_data,
-  min_alt_reads = 3,
-  probability_threshold = 0.8
-)
+run_power_analysis(
+    mutect_force_calling_path = "results/mutect_force_calling/",
+    output_file_path = "output/detection_rates.tsv",
+   sample_file_path = "data/sample_manifest.tsv",
+   snv_list = "results/pyclone/",
+   min_alt_reads = 3,
+   prob_cutoff = 0.8,
+   snv_type = "data/cluster_categories.tsv"
+ )
 
 # Visualize results
-plot_power_analysis(results)
+results <- compare_detection_rates(
+   track = detection_results,
+   metadata = sample_info,
+   variables = c("Organ", "Phenotype","CCP score")
+ )
 ```
 
 ## Methodology
@@ -124,12 +126,7 @@ Generate BED files of tumor-detected mutations:
 ```r
 source("R/prepare_bed_files.R")
 
-# Categorize SNVs by prevalence
-prepare_bed_files(
-  input_vcf = "tumor_mutations.vcf",
-  output_dir = "bed_files/",
-  categorize = TRUE  # Creates founder/shared/private SNV files
-)
+prepare_bed_file(tumor_file_path,output_file_path,patient_file_path,validate_input = TRUE)
 ```
 
 **SNV Categories:**
@@ -167,106 +164,36 @@ Use Mutect force calling to get the cfDNA allele counts at each tumor informed l
 ```r
 source("R/power_analysis.R")
 
-results <- power_analysis(
-  tumor_file = "tumor_mutations.vcf",
-  cfdna_file = "cfdna_forced_calls.vcf",
-  tumor_purity = 0.7,
-  cfdna_purity = 0.05,
-  min_alt_reads = 3,
-  probability_cutoff = 0.8,
-  output_prefix = "sample_001"
-)
+run_power_analysis(
+    mutect_force_calling_path = "results/mutect_force_calling/",
+    output_file_path = "output/detection_rates.tsv",
+   sample_file_path = "data/sample_manifest.tsv",
+   snv_list = "results/pyclone/",
+   min_alt_reads = 3,
+   prob_cutoff = 0.8,
+   snv_type = "data/cluster_categories.tsv"
+ )
 ```
 
 ### Step 4: Downstream Analysis
 
 ```r
-# Compare detection rates across SNV categories
-compare_snv_categories(results)
-
 # Analyze detection by metastatic site
 plot_by_organ_site(results, metadata = clinical_data)
 
 # Generate summary statistics
-generate_report(results, output_file = "power_analysis_report.html")
+results <- compare_detection_rates(
+   track = detection_results,
+   metadata = sample_info,
+   variables = c("Organ", "Phenotype","CCP score")
+ )
 ```
-
-## Usage Examples
-
-### Example 1: Basic Analysis
-
-```r
-# Simple power analysis with default parameters
-basic_results <- run_power_analysis(
-  tumor_data = "mutations.vcf",
-  cfdna_data = "cfdna_counts.txt"
-)
-```
-
-### Example 2: Custom Parameters
-
-```r
-# Conservative analysis with higher stringency
-conservative_results <- run_power_analysis(
-  tumor_data = "mutations.vcf",
-  cfdna_data = "cfdna_counts.txt",
-  min_alt_reads = 4,
-  probability_cutoff = 0.9,
-  tumor_purity = 0.8,
-  cfdna_purity = 0.03
-)
-```
-
-### Example 3: Batch Processing
-
-```r
-# Process multiple samples
-sample_list <- c("patient_001", "patient_002", "patient_003")
-
-batch_results <- lapply(sample_list, function(sample_id) {
-  run_power_analysis(
-    tumor_data = paste0(sample_id, "_tumor.vcf"),
-    cfdna_data = paste0(sample_id, "_cfdna.txt"),
-    output_prefix = sample_id
-  )
-})
-```
-
-## Configuration
-
-Create a configuration file `config.yaml`:
-
-```yaml
-analysis:
-  min_alt_reads: 3
-  probability_cutoff: 0.8
-  min_read_depth: 10
-  
-purity:
-  default_tumor_purity: 0.7
-  default_cfdna_purity: 0.05
-  
-output:
-  generate_plots: true
-  plot_format: "pdf"
-  save_intermediate: false
-```
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md).
 
 ### Development Setup
 
 ```bash
 git clone https://github.com/manasvitavashisth/PowerAnalysis.git
 cd PowerAnalysis
-```
-
-### Running Tests
-
-```r
-devtools::test()
 ```
 
 ## Citation
