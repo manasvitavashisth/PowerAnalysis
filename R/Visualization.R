@@ -256,4 +256,94 @@ compare_detection_rates <- function(track, metadata, variables) {
   
   return(p_values)
 }
+#' Plot Relationship Between cfDNA Tumor Fraction and SNV Detection
+#'
+#' Creates a scatter plot with linear regression showing how cfDNA tumor 
+#' fraction (tumor purity in plasma) correlates with the detection rate of
+#' private SNVs. This visualization helps determine if samples with higher
+#' tumor content in cfDNA show better variant detection rates.
+#'
+#' @param track Data frame. Detection rate results from run_power_analysis().
+#'   Must include columns: Sample (or sample), PrivateSNVs_detected.
+#' @param sample_file_path Character. Path to sample manifest file (TSV format).
+#'   Required columns: sample, cfdna, patient, tumor_purity, cfdna_tf.
+#'   
+#' @return ggplot object. Scatter plot with linear regression line showing
+#'   relationship between cfDNA tumor fraction and detection rate.
+#'
+#' @details
+#' This analysis addresses the question: "Do samples with higher circulating
+#' tumor DNA fractions have better variant detection rates?"
+#' 
+#' Expected biological relationship:
+#'   - Higher cfDNA tumor fraction → More tumor DNA molecules in plasma
+#'   - More tumor DNA → Higher probability of sequencing tumor variants
+#'   - Result: Positive correlation between cfdna_tf and detection rate
+#'
+#' Clinical implications:
+#'   - Validates that detection rates are biology-driven (not technical artifacts)
+#'   - Identifies samples with low tumor fraction that may need deeper sequencing
+#'   - Informs minimum tumor fraction requirements for reliable detection
+#'
+#' @export
+#' 
+#' @examples
+#' \dontrun{
+#' # Basic usage
+#' p <- plot_reduction_in_SNVs(
+#'   track = detection_results,
+#'   sample_file_path = "data/sample_manifest.tsv"
+#' )
+#' print(p)
+#' 
+#' # Save plot
+#' ggsave("cfdna_tf_vs_detection.pdf", p, width = 8, height = 6)
+#' 
+#' # Extract regression statistics
+#' model <- lm(PrivateSNVs_detected ~ cfdna_tf, data = p$data)
+#' summary(model)
+#' }
+plot_reduction_in_SNVs <- function(track, sample_file_path) {
+  
+  # Load Sample Manifest ------------------------------------------------------
+  
+  # Read sample manifest containing tumor/cfDNA pairing and purity estimates
+  # This file links each cfDNA sample to its tumor purity and tumor fraction
+  # 
+  # Expected columns:
+  #   - sample: tumor sample identifier
+  #   - cfdna: cfDNA sample identifier  
+  #   - patient: patient identifier (for grouping)
+  #   - tumor_purity: estimated purity of tumor biopsy (0-1)
+  #   - cfdna_tf: circulating tumor DNA fraction in plasma (0-1)
+  #
+  # cfdna_tf (cfDNA tumor fraction) represents:
+  #   - The proportion of cell-free DNA that originates from tumor cells
+  #   - Typically much lower than tumor_purity (e.g., 0.01-0.10 vs 0.5-0.9)
+  #   - Key determinant of variant detection sensitivity
+  #   - Can be estimated from shallow WGS, copy number, or variant allele frequencies
+  tumor <- as.data.frame(fread(
+    sample_file_path,
+    header = TRUE,
+    sep = "\t",
+    stringsAsFactors = FALSE,
+    na.strings = c(".", "NA")
+  ))
+  
+  cat(sprintf("Loaded manifest for %d samples\n", nrow(tumor)))
+  
+  # Merge Detection Rates with Tumor Fraction Data ---------------------------
+  
+  # Join the detection rate results (track) with the tumor fraction data (tumor)
+  # This combines:
+  #   - Detection rates (outcome variable: PrivateSNVs_detected)
+  #   - cfDNA tumor fraction (predictor variable: cfdna_tf)
+  #
+  # Using left_join ensures we keep all samples from track,
 
+data=left_join(track,tumor,by='sample')
+ggplot(data, aes(x=cfdna_tf, y=PrivateSNVs_detected)) +
+  geom_point() +
+  geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE) +
+  theme_ipsum()
+}
