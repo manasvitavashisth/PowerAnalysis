@@ -1,0 +1,47 @@
+Package: PowerAnalysis
+Type: Package
+Title: Tumor-Informed cfDNA Variant Validation Using Binomial Power Analysis
+Version: 1.0.0
+Date: 2025-01-03
+Authors@R: c(
+    person("Manasvita", "Vashisth", 
+           email = "mvashist@fredhutch.org",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-2280-5980"))
+    )
+Description: PowerAnalysis provides tools for validating tumor-informed variants 
+    in cell-free DNA (cfDNA) using binomial power analysis. The package determines 
+    minimum sequencing depth requirements to distinguish true biological negatives 
+    from under-sampled sites with sufficient statistical power. It supports 
+    categorization of single nucleotide variants (SNVs) as founder, shared, or 
+    private based on their prevalence across metastatic sites, and includes 
+    visualization tools for publication-ready figures.
+License: file LICENSE
+URL: https://github.com/manasvitavashisth/PowerAnalysis
+BugReports: https://github.com/manasvitavashisth/PowerAnalysis/issues
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 4.0.0)
+Imports:
+    tidyverse (>= 2.0.0),
+    dplyr (>= 1.1.0),
+    ggplot2 (>= 3.4.0),
+    data.table (>= 1.14.0),
+    scales (>= 1.2.0),
+    patchwork (>= 1.1.0),
+    viridis (>= 0.6.0),
+    lme4 (>= 1.1-30),
+    hrbrthemes (>= 0.8.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr (>= 1.40),
+    rmarkdown (>= 2.20),
+    covr (>= 3.6.0),
+    BiocManager (>= 1.30.0),
+    GenomicRanges (>= 1.50.0),
+    rtracklayer (>= 1.58.0)
+VignetteBuilder: knitr
+RoxygenNote: 7.2.3
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
