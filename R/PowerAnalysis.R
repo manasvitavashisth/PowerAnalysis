@@ -196,15 +196,8 @@ run_power_analysis <- function(mutect_force_calling_path,
      
     # Load Mutect2 Force Calling Results --------------------------------------
     
-    # Construct path to Mutect2 output file for this cfDNA sample
-    mutect_file <- file.path(
-      mutect_force_calling_path,
-      tumor$cfdna[i],
-      'mutations_unfiltered.hg38_multianno.txt'
-    )
-    
     # Check if file exists
-    if (!file.exists(mutect_file)) {
+    if (!file.exists(mutect_force_calling_path)) {
       warning(sprintf("Mutect file not found for sample %s: %s", 
                      tumor$cfdna[i], mutect_file))
       next
@@ -213,7 +206,7 @@ run_power_analysis <- function(mutect_force_calling_path,
     # Read Mutect2 force calling output
     # This contains read depth and allele counts at all tumor-informed sites
     mutect <- as.data.frame(fread(
-      mutect_file,
+      mutect_force_calling_path,
       header = TRUE,
       sep = "\t",
       stringsAsFactors = FALSE,
