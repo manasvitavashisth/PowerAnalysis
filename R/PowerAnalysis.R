@@ -80,7 +80,7 @@ calc_proportion <- function(tumor, cfdna, cluster, type) {
 }
 
 
-#' Run Power Analysis on cfDNA Samples
+#' Run Power Analysis on cfDNA samples
 #'
 #' Main function to perform comprehensive power analysis across multiple cfDNA samples.
 #' For each sample, this function:
@@ -172,41 +172,40 @@ run_power_analysis <- function(mutect_force_calling_path,
   # Initialize Results Table --------------------------------------------------
   
   # Create tracking table to store detection rates for each sample
-  # Columns: Sample ID, and proportion detected for each SNV category
+  # Columns: sample ID, and proportion detected for each SNV category
   track <- as.data.frame(matrix(
     data = NA,
     nrow = length(sample),
     ncol = 4
   ))
   colnames(track) <- c(
-    'Sample',
+    'sample',
     'Reduction_in_SNVs',
     'PrivateSNVs_detected',
     'SharedSNVs_detected',
     'FounderSNVs_detected'
   )
-  track$Sample <- sample
+  track$sample <- sample
   
   cat("\nProcessing samples...\n")
   
-  # Process Each Sample -------------------------------------------------------
+  # Process Each sample -------------------------------------------------------
   
   # Iterate through each tumor sample and its corresponding cfDNA sample
   for (i in seq_along(sample)) {
-     
+    
     # Load Mutect2 Force Calling Results --------------------------------------
     
     # Check if file exists
-    if (!file.exists(mutect_force_calling_path)) {
+    if (!file.exists(paste0('mutect_force_calling_path',tumor$cfdna[i],'/mutations_unfiltered.hg38_multianno.txt'))) {
       warning(sprintf("Mutect file not found for sample %s: %s", 
-                     tumor$cfdna[i], mutect_file))
+                      tumor$cfdna[i]))
       next
     }
     
     # Read Mutect2 force calling output
     # This contains read depth and allele counts at all tumor-informed sites
-    mutect <- as.data.frame(fread(
-      mutect_force_calling_path,
+    mutect <- as.data.frame(fread(paste0('mutect_force_calling_path',tumor$cfdna[i],'/mutations_unfiltered.hg38_multianno.txt'),
       header = TRUE,
       sep = "\t",
       stringsAsFactors = FALSE,
@@ -257,7 +256,7 @@ run_power_analysis <- function(mutect_force_calling_path,
     # Check if file exists
     if (!file.exists(pyclone_file)) {
       warning(sprintf("PyClone file not found for patient %s: %s", 
-                     tumor$patient[i], pyclone_file))
+                      tumor$patient[i], pyclone_file))
       next
     }
     
@@ -317,14 +316,14 @@ run_power_analysis <- function(mutect_force_calling_path,
         pyclone_reduced$vaf * fraction            # p (expected probability of alt allele)
       )) >= prob_cutoff,                   # Only keep if power ≥ threshold
     ]
-     
+    
     # Calculate proportion of SNV sites reduced due to insufficient read depth
     track[i,'Reduction_in_SNVs']=(nrow(pyclone)-nrow(pyclone_reduced))/nrow(pyclone)
     # Identify variants that were actually detected in cfDNA
     # "Detected" = has at least 1 alternate read (alt_depth > 0)
     ctdna_detected <- pyclone_reduced[pyclone_reduced$alt_depth > 0, ]
     
-     
+    
     # Calculate Detection Rates by SNV Category -------------------------------
     
     # Calculate what proportion of each SNV category was detected
@@ -338,7 +337,7 @@ run_power_analysis <- function(mutect_force_calling_path,
       cluster = s_clusters,
       type = 'Private'
     )
-     
+    
     # Shared SNVs (found in multiple but not all metastatic sites)
     track[i, 'SharedSNVs_detected'] <- calc_proportion(
       tumor = pyclone_reduced,
@@ -399,7 +398,7 @@ run_power_analysis <- function(mutect_force_calling_path,
 #' Checks that input data frames contain all required columns.
 #' Stops execution with informative error if validation fails.
 #'
-#' @param tumor Data frame. Sample manifest with purity estimates
+#' @param tumor Data frame. sample manifest with purity estimates
 #' @param clusters Data frame. Cluster to SNV category mapping
 #' @keywords internal
 validate_input_data <- function(tumor, clusters) {
@@ -422,7 +421,7 @@ validate_input_data <- function(tumor, clusters) {
   if (!all(required_tumor_cols %in% names(tumor))) {
     missing_cols <- setdiff(required_tumor_cols, names(tumor))
     stop(
-      "Sample manifest (tumor data) missing required columns: ",
+      "sample manifest (tumor data) missing required columns: ",
       paste(missing_cols, collapse = ", "),
       "\nExpected columns: ",
       paste(required_tumor_cols, collapse = ", ")
@@ -488,10 +487,10 @@ validate_input_data <- function(tumor, clusters) {
 #' )
 #' }
 calculate_single_variant_power <- function(depth,
-                                          vaf,
-                                          cfDNA_purity,
-                                          tumor_purity,
-                                          min_alt_reads = DEFAULT_MIN_ALT_READS) {
+                                           vaf,
+                                           cfDNA_purity,
+                                           tumor_purity,
+                                           min_alt_reads = DEFAULT_MIN_ALT_READS) {
   
   # Calculate expected probability in cfDNA
   expected_prob <- vaf * (cfDNA_purity / tumor_purity)
