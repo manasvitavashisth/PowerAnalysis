@@ -1,0 +1,5 @@
+patient	sample	cfdna	tumor_purity	cfdna_tf
+02-010	02-010_LIVER	02-010_cfdna	0.7	0.1
+03-440	03-440_LUNG	03-440_cfdna	0.8	0.5
+40-055	40-055_LIVER	40-055_cfdna	0.7	0.2
+11-220	11-220_LUNG	11-220_cfdna	0.4	0.4
