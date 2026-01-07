@@ -1,5 +1,0 @@
-patient	sample	cluster_id	cellular_prevalence	number_of_mutations	Cluster
-02-010	02-010_LIVER	0	0.6565	5898	Private
-03-440	03-440_LUNG	1	1	1854	Founder
-40-055	40-055_LIVER	2	1	22735	Private
-11-220	11-220_LUNG	4	0.5539	1497	Shared
